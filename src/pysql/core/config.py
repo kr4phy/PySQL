@@ -24,9 +24,7 @@ CONNECTION_TIMEOUT: Final[int] = 5
 
 # Default query for the editor
 DEFAULT_QUERY: Final[str] = (
-    "SELECT 1 AS id, 'Kim Min-su' AS name, 'Robotics' AS club\n"
-    "UNION ALL SELECT 2, 'Lee Seo-yeon', 'Cybersecurity'\n"
-    "UNION ALL SELECT 3, 'Park Ji-hoon', 'Game Development';"
+    "SELECT 'Hello, world!';"
 )
 
 # Status messages
