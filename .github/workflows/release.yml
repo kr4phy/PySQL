@@ -1,0 +1,125 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            artifact_name: PySQL-linux
+            executable_name: PySQL
+            asset_name: PySQL-linux-x86_64
+          - os: windows-latest
+            artifact_name: PySQL-windows
+            executable_name: PySQL.exe
+            asset_name: PySQL-windows-x86_64.exe
+          - os: macos-latest
+            artifact_name: PySQL-macos
+            executable_name: PySQL
+            asset_name: PySQL-macos-x86_64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+          uv pip install pyinstaller
+
+      - name: Build with PyInstaller
+        run: |
+          pyinstaller \
+            --name PySQL \
+            --windowed \
+            --onefile \
+            --paths src \
+            --collect-all mysql.connector \
+            --clean \
+            src/pysql/__main__.py
+
+      - name: Rename executable (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          mv dist/PySQL.exe dist/PySQL.exe
+          mv dist/PySQL.exe dist/${{ matrix.executable_name }}
+
+      - name: Rename executable (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          mv dist/PySQL dist/${{ matrix.executable_name }}
+          chmod +x dist/${{ matrix.executable_name }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/${{ matrix.executable_name }}
+          retention-days: 1
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: PySQL-*
+
+      - name: Display artifact structure
+        run: ls -R artifacts
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## PySQL ${{ github.ref_name }} Release
+            
+            ### Platform-specific executables:
+            
+            - **Linux (x86_64)**: PySQL-linux-x86_64
+            - **Windows (x86_64)**: PySQL-windows-x86_64.exe  
+            - **macOS (x86_64)**: PySQL-macos-x86_64
+            
+            ### Changelog
+            
+            See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/${{ github.ref_name }}/CHANGELOG.md) for details.
+            
+            ### Notes
+            
+            - Windows builds must be run on Windows
+            - Linux builds must be run on Linux
+            - macOS builds must be run on macOS
+            - Each executable is self-contained and includes all dependencies
+          files: |
+            artifacts/PySQL-linux/PySQL-linux-x86_64
+            artifacts/PySQL-windows/PySQL-windows-x86_64.exe
+            artifacts/PySQL-macos/PySQL-macos-x86_64
+          fail_on_unmatched_files: false

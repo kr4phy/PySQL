@@ -1,0 +1,25 @@
+[project]
+name = "pysql"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "kr4phy", email = "kr4phy@gmail.com" }
+]
+requires-python = ">=3.14"
+dependencies = [
+    "mysql-connector-python>=26.7.0",
+]
+
+[project.scripts]
+pysql = "pysql:main"
+
+[build-system]
+requires = ["uv_build>=0.12.7,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pyinstaller>=6.22.3",
+    "pytest>=9.1.1",
+]
