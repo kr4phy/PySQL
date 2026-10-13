@@ -53,7 +53,7 @@ jobs:
 
       - name: Test PyInstaller build
         run: |
-          pyinstaller \
+          uv run pyinstaller \
             --name PySQL \
             --windowed \
             --onedir \

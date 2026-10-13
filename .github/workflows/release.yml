@@ -46,7 +46,7 @@ jobs:
 
       - name: Build with PyInstaller
         run: |
-          pyinstaller \
+          uv run pyinstaller \
             --name PySQL \
             --windowed \
             --onefile \
